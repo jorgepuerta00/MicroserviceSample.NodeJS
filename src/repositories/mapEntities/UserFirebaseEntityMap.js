@@ -10,7 +10,9 @@ const _serializeSingleUserEntity = (entity) => {
         entity.documenttype,
         entity.firstname,
         entity.lastname,
-        entity.email
+        entity.email,
+        entity.age,
+        entity.score
     );
     return JSON.parse(JSON.stringify(firebaseEntity));
 };
@@ -22,7 +24,9 @@ const _serializeSingleUser = (entity) => {
         entity.documenttype,
         entity.firstname,
         entity.lastname,
-        entity.email
+        entity.email,
+        entity.age,
+        entity.score
     );
 }
 
