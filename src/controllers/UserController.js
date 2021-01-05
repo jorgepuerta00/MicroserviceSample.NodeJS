@@ -27,9 +27,21 @@ class UserController {
         useCase.setUser(objUser);
       })
 
-      const response = h.response({ "data": await useCase.execute() }).code(201).type('application/json');
-      response.header("Authorization", request.headers.authorization);
-      return response;
+    const response = h.response({ "data": await useCase.execute() }).code(201).type('application/json');
+    response.header("Authorization", request.headers.authorization);
+    return response;
+  }
+
+  async verifyIdToken(request, h) {
+    const idToken = request.params.id;
+
+    const decodedToken = await admin.auth().verifyIdToken(idToken)
+                            .then((decodedToken) => { return decodedToken; })
+                            .catch((error) => { return error; })
+
+    const response = h.response({ "data": decodedToken }).code(201).type('application/json');
+    response.header("Authorization", request.headers.authorization);
+    return response;
   }
     
   async getUser(request, h) {

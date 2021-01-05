@@ -22,5 +22,11 @@ module.exports = [
     path: '/api/users/{id}',
     config: { auth: 'jwt' },
     handler: async (request, h) => usersController.getUser(request, h)
+  },
+  {
+    method: 'GET',
+    path: '/api/users/verifyIdToken/{id}',
+    config: { auth: 'jwt' },
+    handler: async (request, h) => usersController.verifyIdToken(request, h)
   }
 ];

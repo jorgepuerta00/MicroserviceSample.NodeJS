@@ -1,0 +1,108 @@
+# Node.js
+# Build a general Node.js project with npm.
+# Add steps that analyze code, save build artifacts, deploy, and more:
+# <https://docs.microsoft.com/azure/devops/pipelines/languages/javascript>
+
+trigger:
+- main
+
+variables:
+  buildConfiguration: 'Release'
+  location: 'East US'
+  acrHostName: 'satoshisamplecontaineracr.azurecr.io'
+  acrName: 'satoshisamplecontaineracr'
+  rgName: 'satoshisamplecontaineracr-rg'
+  imageName: 'satoshisampleapi'
+  webAppName: 'satoshisampleapi'
+  hostingPlanName: 'satoshisampleappserviceplan'
+  azureSubscription: 'AzureSC'
+
+stages:
+
+# Build Stage
+- stage: BuildAndTest
+  jobs:
+  - job: BuildAndTest
+    pool:
+      vmImage: 'Ubuntu-20.04'
+    steps:
+
+    # Create or update the ACR resource
+    - task: AzureResourceGroupDeployment@2
+      displayName: 'Azure Deployment: Create Azure Container Registry'
+      inputs:
+        azureSubscription: '$(azureSubscription)'
+        resourceGroupName: '$(rgName)'
+        location: $(location)
+        csmFile: '$(System.DefaultWorkingDirectory)/containerRegistry-template.json'
+        overrideParameters: '-registryName "$(acrName)" -registryLocation "$(location)"'
+
+    # Create or update Azure App Service
+    - task: AzureResourceGroupDeployment@2
+      displayName: 'Azure Deployment: Create Azure App Service'
+      inputs:
+        azureSubscription: '$(azureSubscription)'
+        resourceGroupName: '$(rgName)'
+        location: '$(location)'
+        csmFile: '$(System.DefaultWorkingDirectory)/container-webapp-template.json'
+        overrideParameters: '-webAppName $(webAppName) -hostingPlanName $(hostingPlanName) -appInsightsLocation "$(location)" -sku "S1 Standard" -registryName $(acrName) -registryLocation "$(location)" -registrySku standard -imageName $(imageName)'
+
+    # Install Node
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '12.x'
+      displayName: 'Install Node.js'
+
+    # Restore dependencies and build
+    - script: yarn
+      displayName: 'Install dependencies'
+    
+    - script: yarn build
+      displayName: 'Production build'
+    
+    # ArchiveFiles
+    - task: ArchiveFiles@2
+      displayName: 'Archive files'
+      inputs:
+        rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+        includeRootFolder: false
+        archiveType: zip
+        archiveFile: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+        replaceExistingArchive: true
+
+    # Copy ARM templates
+    - task: CopyFiles@2
+      displayName: 'Copy ARM templates'
+      inputs:
+        SourceFolder: '$(Build.SourcesDirectory)'
+        Contents: '**template.json*'
+        TargetFolder: '$(Build.ArtifactStagingDirectory)'
+    
+    # Publish the app as an artifact
+    - publish: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+      artifact: app
+
+# Staging release
+- stage: Staging
+  jobs:
+  - job: Release
+    pool:
+      vmImage: 'Ubuntu-20.04'
+    steps:
+    # Don't clone the repo
+    - checkout: none
+
+    # Download the published application artifact
+    - download: current
+      artifact: app
+
+    # Deploy on Azure App Service
+    - task: AzureWebApp@1
+      displayName: 'Azure Web App Deploy: $(webAppName)'
+      inputs:
+        azureSubscription: $(azureSubscription)
+        appType: webAppLinux
+        appName: $(webAppName)
+        runtimeStack: 'NODE|10.10'
+        package: $(Pipeline.Workspace)/app/$(Build.BuildId).zip
+        startUpCommand: 'yarn start'
