@@ -16,6 +16,7 @@ variables:
   webAppName: 'satoshisampleapi'
   hostingPlanName: 'satoshisampleappserviceplan'
   azureSubscription: 'AzureSC'
+  vmImageName: 'Ubuntu-20.04'
 
 stages:
 
@@ -24,7 +25,7 @@ stages:
   jobs:
   - job: BuildAndTest
     pool:
-      vmImage: 'Ubuntu-20.04'
+      vmImage: $(vmImageName)
     steps:
 
     # Create or update the ACR resource
@@ -88,7 +89,7 @@ stages:
   jobs:
   - job: Release
     pool:
-      vmImage: 'Ubuntu-20.04'
+      vmImage: $(vmImageName)
     steps:
     # Don't clone the repo
     - checkout: none
@@ -106,4 +107,4 @@ stages:
         appName: $(webAppName)
         runtimeStack: 'NODE|10.10'
         package: $(Pipeline.Workspace)/app/$(Build.BuildId).zip
-        startUpCommand: 'npm run start'
+        startUpCommand: 'yarn start'
