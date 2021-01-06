@@ -54,8 +54,11 @@ stages:
       displayName: 'Install Node.js'
 
     # Restore dependencies and build
-    - script: yarn
-      displayName: 'Install dependencies'
+    - script: |
+        npm install
+        npm run build --if-present
+        npm run test --if-present
+      displayName: 'npm install, build and test'
     
     # ArchiveFiles
     - task: ArchiveFiles@2
@@ -102,4 +105,4 @@ stages:
         appName: $(webAppName)
         runtimeStack: 'NODE|10.10'
         package: $(Pipeline.Workspace)/app/$(Build.BuildId).zip
-        startUpCommand: 'yarn start'
+        startUpCommand: 'npm run start'
