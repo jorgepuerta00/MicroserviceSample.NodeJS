@@ -55,10 +55,8 @@ stages:
 
     # Restore dependencies and build
     - script: |
-        npm install
-        npm run build --if-present
-        npm run test --if-present
-      displayName: 'npm install, build and test'
+        yarn
+      displayName: 'Install dependencies, build and test'
     
     # ArchiveFiles
     - task: ArchiveFiles@2
@@ -84,6 +82,9 @@ stages:
 
 # Staging release
 - stage: Staging
+  displayName: Deploy stage
+  dependsOn: BuildAndTest
+  condition: succeeded()
   jobs:
   - job: Release
     pool:
