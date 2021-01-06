@@ -58,6 +58,26 @@ stages:
     - script: |
         yarn
       displayName: 'Install dependencies, build and test'
+
+    # Build container image
+    - task: Docker@1
+      displayName: 'Build container image'
+      inputs:
+        azureSubscriptionEndpoint: '$(azureSubscription)'
+        azureContainerRegistry: '$(acrHostName)'
+        imageName: '$(imageName):$(Build.BuildId)'
+        useDefaultContext: false
+        buildContext: '$(System.DefaultWorkingDirectory)'
+        dockerFile: '$(System.DefaultWorkingDirectory)/Dockerfile'
+
+    # Push container image
+    - task: Docker@1
+      displayName: 'Push container image'
+      inputs:
+        azureSubscriptionEndpoint: '$(azureSubscription)'
+        azureContainerRegistry: '$(acrHostName)'
+        command: 'Push an image'
+        imageName: '$(imageName):$(Build.BuildId)'
     
     # ArchiveFiles
     - task: ArchiveFiles@2
@@ -80,26 +100,6 @@ stages:
     # Publish the app as an artifact
     - publish: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
       artifact: app
-
-    # Build container image
-    - task: Docker@1
-      displayName: 'Build container image'
-      inputs:
-        azureSubscriptionEndpoint: '$(azureSubscription)'
-        azureContainerRegistry: '$(acrHostName)'
-        imageName: '$(imageName):$(Build.BuildId)'
-        useDefaultContext: false
-        buildContext: '$(System.DefaultWorkingDirectory)'
-        dockerFile: '**/Dockerfile'
-
-    # Push container image
-    - task: Docker@1
-      displayName: 'Push container image'
-      inputs:
-        azureSubscriptionEndpoint: '$(azureSubscription)'
-        azureContainerRegistry: '$(acrHostName)'
-        command: 'Push an image'
-        imageName: '$(imageName):$(Build.BuildId)'
 
 # Staging release
 - stage: Staging
