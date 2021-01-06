@@ -6,10 +6,10 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 # If you are building your code for production
 # RUN npm install --only=production
-RUN npm install
+RUN yarn
 # Copy entire app source
 COPY . .
 # The app is binding to port 3000 equal to server HAPI
 EXPOSE 3000
 # Run node ApiSample.js to start the server
-CMD ["npm", "start"]
+CMD ["yarn", "start"]
